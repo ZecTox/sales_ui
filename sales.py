@@ -6,8 +6,8 @@ st.markdown(
     """
     <style>
     .css-18e3th9 { 
-        padding-top: 1.1rem;  /* Removes padding for the main content */
-        padding-bottom: 1.1rem;  /* Keeps some bottom padding */
+        padding-top: 1rem;  /* Removes padding for the main content */
+        padding-bottom: 1rem;  /* Keeps some bottom padding */
     }
     .css-1d391kg {
         padding-top: 1.1rem;  /* Removes padding for the header section */
@@ -16,7 +16,7 @@ st.markdown(
         padding-top: 1.1rem;  /* Removes top margin for main container */
     }
     .block-container {
-        padding-top: 1.1rem; /* Ensures no padding in the container */
+        padding-top: 1.2rem; /* Ensures no padding in the container */
     }
     </style>
     """,
@@ -158,12 +158,12 @@ def admin_page():
     
     if st.button("Logout"):
         logout()
-
-# User dashboard
+        
+# User Dashboard
 def user_page():
     st.header("User Dashboard")
     st.write(f"Welcome, {st.session_state.username}!")
-    
+
     # Fetch and display data
     df = fetch_sales_data()
     if not df.empty:
@@ -178,16 +178,73 @@ def user_page():
 
                 with col1:
                     # Revenue vs. Target bar chart for the user
-                    fig = go.Figure(data=[
-                        go.Bar(name='September Revenue', x=user_data['agent_name'], y=user_data['sept24_rev_gen'], marker_color='blue'),
-                        go.Bar(name='September Target', x=user_data['agent_name'], y=user_data['sept24_target'], marker_color='lightblue'),
-                        go.Bar(name='October Revenue', x=user_data['agent_name'], y=user_data['oct24_rev_gen'], marker_color='red'),
-                        go.Bar(name='October Target', x=user_data['agent_name'], y=user_data['oct24_target'], marker_color='pink'),
-                        go.Bar(name='November Revenue', x=user_data['agent_name'], y=user_data['nov24_rev_gen'], marker_color='green'),
-                        go.Bar(name='November Target', x=user_data['agent_name'], y=user_data['nov24_target'], marker_color='lightgreen')
-                    ])
-                    fig.update_layout(barmode='group', title="Your Revenue vs. Target Comparison by Month",
-                                      )
+                    fig = go.Figure()
+
+                    # Adding grouped bars for each month
+                    months = ['September', 'October', 'November']
+                    revenues = [
+                        user_data['sept24_rev_gen'].values[0],
+                        user_data['oct24_rev_gen'].values[0],
+                        user_data['nov24_rev_gen'].values[0],
+                    ]
+                    targets = [
+                        user_data['sept24_target'].values[0],
+                        user_data['oct24_target'].values[0],
+                        user_data['nov24_target'].values[0],
+                    ]
+
+                    # Add bars for Revenue
+                    fig.add_trace(go.Bar(
+                        name='Revenue',
+                        x=months,
+                        y=revenues,
+                        text=[f"${val:,.0f}" for val in revenues],
+                        textposition='outside',
+                        marker_color='blue',
+                        width=0.4
+                    ))
+
+                    # Add bars for Target
+                    fig.add_trace(go.Bar(
+                        name='Target',
+                        x=months,
+                        y=targets,
+                        text=[f"${val:,.0f}" for val in targets],
+                        textposition='outside',
+                        marker_color='lightblue',
+                        width=0.4
+                    ))
+
+                    # Update layout for improved visuals
+                    fig.update_layout(
+                        barmode='group',  # Grouped bar chart
+                        title=dict(
+                            text="Revenue vs. Target Comparison",
+                            font=dict(size=20),
+                        ),
+                        xaxis=dict(
+                            title="Month",
+                            tickfont=dict(size=14),
+                            title_font=dict(size=16),
+                        ),
+                        yaxis=dict(
+                            title="Amount (USD)",
+                            tickfont=dict(size=14),
+                            title_font=dict(size=16),
+                            gridcolor='lightgrey'  # Add subtle gridlines
+                        ),
+                        legend=dict(
+                            x=0.5, y=-0.2,
+                            orientation="h",
+                            xanchor="center",
+                            font=dict(size=12),
+                        ),
+                        bargap=0.2,  # Gap between bars
+                        bargroupgap=0.3,  # Increase gap between groups
+                        margin=dict(l=50, r=50, t=70, b=100),
+                        height=500,
+                    )
+
                     st.plotly_chart(fig, use_container_width=True)
 
                 with col2:
@@ -206,6 +263,7 @@ def user_page():
 
     if st.button("Logout"):
         logout()
+
 
 # Logout function
 def logout():
