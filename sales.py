@@ -67,6 +67,28 @@ users = {
     "summit": {"password": "summit123", "role": "user"}
 }
 
+# Mapping usernames to corresponding agent names in the data
+user_agent_mapping = {
+    "thomas": "Thomas",
+    "max": "Max",
+    "kelvin": "Kelvin",
+    "soumya": "Soumya",
+    "rishika": "Rishika",
+    "akon": "Akon",
+    "andrew": "Andrew",
+    "eddy": "Eddy",
+    "june": "June",
+    "rony": "Rony",
+    "daisy": "Daisy",
+    "priyanka": "Priyanka",
+    "annie": "Annie",
+    "eric": "Eric",
+    "karisma": "Karisma",
+    "preetam": "Preetam",
+    "edward": "Edward",
+    "summit": "Summit"
+}
+
 # Authentication function
 def authenticate(username, password):
     if username in users and users[username]["password"] == password:
@@ -126,28 +148,38 @@ def user_page():
     # Fetch and display data
     df = fetch_sales_data()
     if not df.empty:
-        st.dataframe(df)
+        # Map logged-in user to agent name
+        agent_name = user_agent_mapping.get(st.session_state.username, None)
+        if agent_name:
+            # Filter data for the specific agent
+            user_data = df[df['agent_name'] == agent_name]
+            if not user_data.empty:
+                st.dataframe(user_data)
 
-        # Revenue vs. Target bar chart
-        fig = go.Figure(data=[ 
-            go.Bar(name='September Revenue', x=df['agent_name'], y=df['sept24_rev_gen'], marker_color='blue'),
-            go.Bar(name='September Target', x=df['agent_name'], y=df['sept24_target'], marker_color='lightblue'),
-            go.Bar(name='October Revenue', x=df['agent_name'], y=df['oct24_rev_gen'], marker_color='red'),
-            go.Bar(name='October Target', x=df['agent_name'], y=df['oct24_target'], marker_color='pink'),
-            go.Bar(name='November Revenue', x=df['agent_name'], y=df['nov24_rev_gen'], marker_color='green'),
-            go.Bar(name='November Target', x=df['agent_name'], y=df['nov24_target'], marker_color='lightgreen')
-        ])
-        fig.update_layout(barmode='group', title="Revenue vs. Target Comparison by Month")
-        st.plotly_chart(fig, use_container_width=True)
+                # Revenue vs. Target bar chart for the user
+                fig = go.Figure(data=[
+                    go.Bar(name='September Revenue', x=user_data['agent_name'], y=user_data['sept24_rev_gen'], marker_color='blue'),
+                    go.Bar(name='September Target', x=user_data['agent_name'], y=user_data['sept24_target'], marker_color='lightblue'),
+                    go.Bar(name='October Revenue', x=user_data['agent_name'], y=user_data['oct24_rev_gen'], marker_color='red'),
+                    go.Bar(name='October Target', x=user_data['agent_name'], y=user_data['oct24_target'], marker_color='pink'),
+                    go.Bar(name='November Revenue', x=user_data['agent_name'], y=user_data['nov24_rev_gen'], marker_color='green'),
+                    go.Bar(name='November Target', x=user_data['agent_name'], y=user_data['nov24_target'], marker_color='lightgreen')
+                ])
+                fig.update_layout(barmode='group', title="Your Revenue vs. Target Comparison by Month")
+                st.plotly_chart(fig, use_container_width=True)
 
-        # Inquiry count bar chart
-        inquiry_fig = go.Figure(data=[
-            go.Bar(name='September Inquiries', x=df['agent_name'], y=df['sept24_inq_no'], marker_color='purple'),
-            go.Bar(name='October Inquiries', x=df['agent_name'], y=df['oct24_inq_no'], marker_color='orange'),
-            go.Bar(name='November Inquiries', x=df['agent_name'], y=df['nov24_inq_no'], marker_color='cyan')
-        ])
-        inquiry_fig.update_layout(barmode='group', title="Inquiries Count Comparison by Month")
-        st.plotly_chart(inquiry_fig, use_container_width=True)
+                # Inquiry count bar chart for the user
+                inquiry_fig = go.Figure(data=[
+                    go.Bar(name='September Inquiries', x=user_data['agent_name'], y=user_data['sept24_inq_no'], marker_color='purple'),
+                    go.Bar(name='October Inquiries', x=user_data['agent_name'], y=user_data['oct24_inq_no'], marker_color='orange'),
+                    go.Bar(name='November Inquiries', x=user_data['agent_name'], y=user_data['nov24_inq_no'], marker_color='cyan')
+                ])
+                inquiry_fig.update_layout(barmode='group', title="Your Inquiries Count Comparison by Month")
+                st.plotly_chart(inquiry_fig, use_container_width=True)
+            else:
+                st.error("No data found for your account.")
+        else:
+            st.error("Agent name not mapped to your username. Please contact admin.")
 
     if st.button("Logout"):
         logout()
