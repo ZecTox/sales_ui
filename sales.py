@@ -65,7 +65,7 @@ def fetch_sales_data():
         st.error(f"Error fetching data: {e}")
         return pd.DataFrame()
 
-# Mock user database with unique usernames and passwords
+# User database with usernames and passwords
 users = {
     "admin": {"password": "admin123", "role": "admin"},
     "thomas": {"password": "thomas123", "role": "user"},
