@@ -2,6 +2,27 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
+st.markdown(
+    """
+    <style>
+    .css-18e3th9 { 
+        padding-top: 1.1rem;  /* Removes padding for the main content */
+        padding-bottom: 1.1rem;  /* Keeps some bottom padding */
+    }
+    .css-1d391kg {
+        padding-top: 1.1rem;  /* Removes padding for the header section */
+    }
+    .css-1vq4p4l {
+        padding-top: 1.1rem;  /* Removes top margin for main container */
+    }
+    .block-container {
+        padding-top: 1.1rem; /* Ensures no padding in the container */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Function to fetch data from a public Google Sheet
 def fetch_sales_data():
     try:
@@ -123,7 +144,7 @@ def show_login_page():
         role = authenticate(username, password)
         if role:
             st.session_state.logged_in = True
-            st.session_state.username = username
+            st.session_state.username = username.capitalize()
             st.session_state.role = role
             st.rerun()  # Refresh the app to load the appropriate dashboard
         else:
@@ -135,7 +156,6 @@ def admin_page():
     st.write(f"Welcome, {st.session_state.username}!")
     st.write("This is the admin panel where you can manage users and view stats.")
     
-    # Add admin functionalities here
     if st.button("Logout"):
         logout()
 
@@ -143,39 +163,42 @@ def admin_page():
 def user_page():
     st.header("User Dashboard")
     st.write(f"Welcome, {st.session_state.username}!")
-    st.write("This is your personalized user dashboard.")
-
+    
     # Fetch and display data
     df = fetch_sales_data()
     if not df.empty:
         # Map logged-in user to agent name
-        agent_name = user_agent_mapping.get(st.session_state.username, None)
+        agent_name = user_agent_mapping.get(st.session_state.username.lower(), None)
         if agent_name:
             # Filter data for the specific agent
             user_data = df[df['agent_name'] == agent_name]
             if not user_data.empty:
-                st.dataframe(user_data)
+                # Layout with 2 columns: left for chart, right for report
+                col1, col2 = st.columns([2, 1])
 
-                # Revenue vs. Target bar chart for the user
-                fig = go.Figure(data=[
-                    go.Bar(name='September Revenue', x=user_data['agent_name'], y=user_data['sept24_rev_gen'], marker_color='blue'),
-                    go.Bar(name='September Target', x=user_data['agent_name'], y=user_data['sept24_target'], marker_color='lightblue'),
-                    go.Bar(name='October Revenue', x=user_data['agent_name'], y=user_data['oct24_rev_gen'], marker_color='red'),
-                    go.Bar(name='October Target', x=user_data['agent_name'], y=user_data['oct24_target'], marker_color='pink'),
-                    go.Bar(name='November Revenue', x=user_data['agent_name'], y=user_data['nov24_rev_gen'], marker_color='green'),
-                    go.Bar(name='November Target', x=user_data['agent_name'], y=user_data['nov24_target'], marker_color='lightgreen')
-                ])
-                fig.update_layout(barmode='group', title="Your Revenue vs. Target Comparison by Month")
-                st.plotly_chart(fig, use_container_width=True)
+                with col1:
+                    # Revenue vs. Target bar chart for the user
+                    fig = go.Figure(data=[
+                        go.Bar(name='September Revenue', x=user_data['agent_name'], y=user_data['sept24_rev_gen'], marker_color='blue'),
+                        go.Bar(name='September Target', x=user_data['agent_name'], y=user_data['sept24_target'], marker_color='lightblue'),
+                        go.Bar(name='October Revenue', x=user_data['agent_name'], y=user_data['oct24_rev_gen'], marker_color='red'),
+                        go.Bar(name='October Target', x=user_data['agent_name'], y=user_data['oct24_target'], marker_color='pink'),
+                        go.Bar(name='November Revenue', x=user_data['agent_name'], y=user_data['nov24_rev_gen'], marker_color='green'),
+                        go.Bar(name='November Target', x=user_data['agent_name'], y=user_data['nov24_target'], marker_color='lightgreen')
+                    ])
+                    fig.update_layout(barmode='group', title="Your Revenue vs. Target Comparison by Month",
+                                      )
+                    st.plotly_chart(fig, use_container_width=True)
 
-                # Inquiry count bar chart for the user
-                inquiry_fig = go.Figure(data=[
-                    go.Bar(name='September Inquiries', x=user_data['agent_name'], y=user_data['sept24_inq_no'], marker_color='purple'),
-                    go.Bar(name='October Inquiries', x=user_data['agent_name'], y=user_data['oct24_inq_no'], marker_color='orange'),
-                    go.Bar(name='November Inquiries', x=user_data['agent_name'], y=user_data['nov24_inq_no'], marker_color='cyan')
-                ])
-                inquiry_fig.update_layout(barmode='group', title="Your Inquiries Count Comparison by Month")
-                st.plotly_chart(inquiry_fig, use_container_width=True)
+                with col2:
+                    st.subheader("User Report")
+                    # Add a basic user performance summary
+                    total_revenue = user_data[['sept24_rev_gen', 'oct24_rev_gen', 'nov24_rev_gen']].sum(axis=1).values[0]
+                    total_target = user_data[['sept24_target', 'oct24_target', 'nov24_target']].sum(axis=1).values[0]
+                    st.write(f"**Total Revenue Generated:** ${total_revenue:,.2f}")
+                    st.write(f"**Total Target Achieved:** ${total_target:,.2f}")
+                    st.write("Keep up the good work!")
+
             else:
                 st.error("No data found for your account.")
         else:
@@ -186,7 +209,6 @@ def user_page():
 
 # Logout function
 def logout():
-    # Reset session state variables
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.session_state.role = ""
