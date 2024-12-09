@@ -2,6 +2,12 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
+# Set page configuration for wide mode
+st.set_page_config(
+    page_title="Truherb Sales Performance", #Sets the app name to Truherb Sales Performance
+    layout="wide",  # Enables wide mode
+)
+
 st.markdown(
     """
     <style>
@@ -153,9 +159,63 @@ def show_login_page():
 # Admin dashboard
 def admin_page():
     st.header("Admin Dashboard")
-    st.write(f"Welcome, {st.session_state.username}!")
-    st.write("This is the admin panel where you can manage users and view stats.")
-    
+    st.write(f"Welcome, {st.session_state.username}!. This is the admin panel where you can view all Users Performance.")
+    # Fetch and display data
+    df = fetch_sales_data()
+    if not df.empty:
+        # Prepare a summary for all users
+        performance_data = []
+        for _, row in df.iterrows():
+            agent_name = row['agent_name']
+            total_revenue = row[['sept24_rev_gen', 'oct24_rev_gen', 'nov24_rev_gen']].sum()
+            total_target = row[['sept24_target', 'oct24_target', 'nov24_target']].sum()
+            rating = calculate_rating(total_revenue, total_target)
+
+            # Append to performance data
+            performance_data.append({
+                "Agent Name": agent_name,
+                "September Revenue": f"${row['sept24_rev_gen']:,.2f}",
+                "October Revenue": f"${row['oct24_rev_gen']:,.2f}",
+                "November Revenue": f"${row['nov24_rev_gen']:,.2f}",
+                "September Target": f"${row['sept24_target']:,.2f}",
+                "October Target": f"${row['oct24_target']:,.2f}",
+                "November Target": f"${row['nov24_target']:,.2f}",
+                "Total Revenue": f"${total_revenue:,.2f}",
+                "Total Target": f"${total_target:,.2f}",
+                "Rating                                ": rating
+            })
+
+        # Convert performance data into a DataFrame for display
+        summary_df = pd.DataFrame(performance_data)
+        
+        # Update the index to start from 1
+        summary_df.index = range(1, len(summary_df) + 1)
+        
+        # Apply styling to increase the width of the "Rating" column
+        styled_df = summary_df.style.set_table_styles(
+            [
+                {"selector": "thead th", "props": [("text-align", "center"), ("font-size", "14px")]},
+                {"selector": "tbody td", "props": [("text-align", "center")]},
+                {"selector": "tbody td:nth-child(10)", "props": [("min-width", "200px"), ("max-width", "300px"), ("text-align", "center")]}
+            ]
+        )
+
+        # Display the table
+        st.subheader("Users' Monthly Performance Summary")
+        st.dataframe(summary_df, use_container_width=False)
+
+        # Optionally, download the table as CSV
+        csv = summary_df.to_csv(index=False)
+        st.download_button(
+            label="Download Performance Data as CSV",
+            data=csv,
+            file_name="performance_summary.csv",
+            mime="text/csv"
+        )
+    else:
+        st.error("No data available to display.")
+
+    # Logout button
     if st.button("Logout"):
         logout()
 
