@@ -1,5 +1,6 @@
 [server]
 headless = true
+enableCORS = false
 
 [theme]
 # Optional: If you want to keep dark mode, you can specify the theme here:
@@ -11,3 +12,7 @@ font = "sans serif"
 
 [browser]
 gatherUsageStats = false  # This hides the "Source code" button
+
+[ui]
+showGitHubBranding = false
+showForkButton = false
