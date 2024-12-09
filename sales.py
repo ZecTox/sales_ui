@@ -158,7 +158,46 @@ def admin_page():
     
     if st.button("Logout"):
         logout()
+
+def calculate_rating(total_revenue, total_target):
+    """
+    Calculate performance percentage and determine user rating.
+    Updated to handle 0 revenue or target cases more effectively.
+    """
+    try:
+        # Special cases
+        if total_target == 0 and total_revenue == 0:
+            return "No Target Set or Sales Data"
+        elif total_target == 0:
+            return "Target is zero; performance cannot be calculated."
         
+        # Calculate performance percentage
+        performance_percentage = (total_revenue / total_target) * 100
+
+        # Determine underperformance or overperformance rating
+        if performance_percentage < 0 or total_revenue == 0:
+            # Underperformance ratings
+            if performance_percentage <= -60 or total_revenue == 0:
+                return "Critical"
+            elif -60 < performance_percentage <= -40:
+                return "Extremely Poor"
+            elif -40 < performance_percentage <= -20:
+                return "Poor"
+            else:
+                return "Deficient"
+        else:
+            # Overperformance ratings
+            if 0 <= performance_percentage <= 25:
+                return "High Roller"
+            elif 25 < performance_percentage <= 75:
+                return "Sales Hero"
+            elif 75 < performance_percentage <= 150:
+                return "Top Achievers"
+            else:
+                return "Star Performer"
+    except Exception as e:
+        return f"Error in calculation: {e}"
+
 # User Dashboard
 def user_page():
     st.header("User Dashboard")
@@ -249,21 +288,25 @@ def user_page():
 
                 with col2:
                     st.subheader("User Report")
-                    # Add a basic user performance summary
+                    # Calculate total revenue and target
                     total_revenue = user_data[['sept24_rev_gen', 'oct24_rev_gen', 'nov24_rev_gen']].sum(axis=1).values[0]
                     total_target = user_data[['sept24_target', 'oct24_target', 'nov24_target']].sum(axis=1).values[0]
+
+                    # Calculate performance and rating
+                    rating = calculate_rating(total_revenue, total_target)
+
+                    # Display the summary
                     st.write(f"**Total Revenue Generated:** ${total_revenue:,.2f}")
                     st.write(f"**Total Target Achieved:** ${total_target:,.2f}")
-                    st.write("Keep up the good work!")
+                    st.write(f"**Performance Rating:** {rating}")
 
-            else:
+            else:   
                 st.error("No data found for your account.")
         else:
             st.error("Agent name not mapped to your username. Please contact admin.")
 
     if st.button("Logout"):
         logout()
-
 
 # Logout function
 def logout():
